@@ -1,95 +1,86 @@
-const { getAccessToken } = require("../services/canvaService");
+const axios = require("axios");
 
-// controllers/canvaController.js
-const crypto = require("crypto");
-
-// Generate a random code verifier
-function generateCodeVerifier() {
-  return crypto.randomBytes(32).toString("hex");
-}
-
-// Base64-url encode for PKCE
-function base64URLEncode(str) {
-  return str.toString("base64")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=/g, "");
-}
-
-// SHA256 hash for PKCE
-function sha256(buffer) {
-  return crypto.createHash("sha256").update(buffer).digest();
-}
-
-
-
-
-// STEP 1: Redirect user to Canva
+// STEP 1: Redirect to Canva (OAuth already done)
 exports.redirectToCanva = (req, res) => {
-  // 1️⃣ Generate PKCE code verifier & challenge
-  const codeVerifier = generateCodeVerifier();
-  const codeChallenge = base64URLEncode(sha256(codeVerifier));
-
-  // 2️⃣ Store codeVerifier temporarily in session (or in-memory for now)
-  req.session = req.session || {};
-  req.session.codeVerifier = codeVerifier;
-
-  // 3️⃣ Build Canva authorization URL
   const params = new URLSearchParams({
     response_type: "code",
     client_id: process.env.CANVA_CLIENT_ID,
     redirect_uri: process.env.CANVA_REDIRECT_URI,
-    scope: "profile:read asset:write asset:read",
-    code_challenge: codeChallenge,
-    code_challenge_method: "s256"
+    scope: "profile:read asset:read asset:write",
   });
 
-  const url = `${process.env.CANVA_AUTH_URL}?${params.toString()}`;
-  console.log("Redirecting to Canva:", url);
-
-  // 4️⃣ Redirect user
+  const url = `https://www.canva.com/api/oauth/authorize?${params.toString()}`;
   res.redirect(url);
 };
 
-// STEP 2: Handle Canva callback
-// exports.handleCallback = async (req, res) => {
-//   const { code } = req.query;
+// STEP 2: Exchange code → access token
+async function getAccessToken(code) {
+  const response = await axios.post(
+    "https://api.canva.com/rest/v1/oauth/token",
+    {
+      grant_type: "authorization_code",
+      code: code,
+      redirect_uri: process.env.CANVA_REDIRECT_URI,
+      client_id: process.env.CANVA_CLIENT_ID,
+      client_secret: process.env.CANVA_CLIENT_SECRET,
+    }
+  );
 
-//   if (!code) {
-//     return res.status(400).send("Authorization failed");
-//   }
+  return response.data;
+}
 
-//   try {
-//     const tokenData = await getAccessToken(code);
-
-//     // 🔥 Simulated values (real after approval)
-//     const designId = "demo-" + Date.now();
-//     const downloadUrl = `https://dummy-download.com/${designId}.png`;
-
-//     // Redirect back to frontend (Shopify flow simulation)
-//     res.redirect(
-//       `${process.env.FRONTEND_URL}?designId=${designId}&downloadUrl=${downloadUrl}`
-//     );
-//   } catch (error) {
-//     res.status(500).send("Error during authentication");
-//   }
-// };
-
-
+// STEP 3: Handle callback
 exports.handleCallback = async (req, res) => {
   const { code } = req.query;
 
-  if (!code) return res.status(400).send("Authorization failed");
+  if (!code) {
+    return res.status(400).send("Authorization failed");
+  }
 
-  // Retrieve codeVerifier from session
-  const codeVerifier = req.session?.codeVerifier;
-  console.log("Received code:", code);
-  console.log("Using codeVerifier:", codeVerifier);
+  try {
+    const tokenData = await getAccessToken(code);
 
-  // TODO: Use code + codeVerifier to get access token from Canva
-  // For demo, continue with your simulated download URL
-  const designId = "demo-" + Date.now();
-  const downloadUrl = `https://dummy-download.com/${designId}.png`;
+    const accessToken = tokenData.access_token;
 
-  res.redirect(`${process.env.FRONTEND_URL}?designId=${designId}&downloadUrl=${downloadUrl}`);
+    // Store token temporarily (you can store in DB later)
+    req.session = req.session || {};
+    req.session.accessToken = accessToken;
+
+    // Redirect to frontend to open Canva editor
+    res.redirect(`${process.env.FRONTEND_URL}/design`);
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).send("Token exchange failed");
+  }
+};
+
+// STEP 4: Export design
+exports.exportDesign = async (req, res) => {
+  const { designId } = req.query;
+  const accessToken = req.session?.accessToken;
+
+  if (!designId) {
+    return res.status(400).send("Missing designId");
+  }
+
+  try {
+    const response = await axios.post(
+      `https://api.canva.com/rest/v1/designs/${designId}/export`,
+      {
+        format: "png",
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      }
+    );
+
+    const downloadUrl = response.data.download_url;
+
+    res.json({ downloadUrl });
+  } catch (err) {
+    console.error(err.response?.data || err.message);
+    res.status(500).send("Export failed");
+  }
 };

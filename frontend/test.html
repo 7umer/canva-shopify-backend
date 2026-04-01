@@ -9,6 +9,26 @@
 
 <button onclick="connect()">Design with Canva</button>
 
+<br><br>
+
+<button onclick="openCanva()">Open Canva Editor</button>
+
+<br><br>
+
+<!-- ✅ USER PASTES FULL URL -->
+<input 
+  type="text" 
+  id="designUrlInput" 
+  placeholder="Paste Canva Design URL here"
+  style="padding:10px; width:400px;"
+/>
+
+<br><br>
+
+<button onclick="downloadDesign()">Download Design</button>
+
+<br><br>
+
 <pre id="result"></pre>
 
 <script>
@@ -16,13 +36,42 @@ function connect() {
   window.location.href = "https://canva-shopify-backend.onrender.com/connect";
 }
 
-const params = new URLSearchParams(window.location.search);
-const designId = params.get("designId");
-const downloadUrl = params.get("downloadUrl");
+function openCanva() {
+  window.open("https://www.canva.com/design", "_blank");
+}
 
-if (designId) {
-  document.getElementById("result").textContent =
-    "Design ID: " + designId + "\nDownload URL: " + downloadUrl;
+// ✅ AUTO EXTRACT DESIGN ID
+function extractDesignId(url) {
+  const match = url.match(/design\/([A-Za-z0-9_-]+)/);
+  return match ? match[1] : null;
+}
+
+async function downloadDesign() {
+  const url = document.getElementById("designUrlInput").value;
+
+  if (!url) {
+    alert("Paste Canva design URL");
+    return;
+  }
+
+  const designId = extractDesignId(url);
+
+  if (!designId) {
+    alert("Invalid Canva URL");
+    return;
+  }
+
+  const res = await fetch(
+    `https://canva-shopify-backend.onrender.com/export?designId=${designId}`
+  );
+
+  const data = await res.json();
+
+  if (data.downloadUrl) {
+    window.location.href = data.downloadUrl;
+  } else {
+    alert("Download failed");
+  }
 }
 </script>
 
