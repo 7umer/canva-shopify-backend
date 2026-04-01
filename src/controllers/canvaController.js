@@ -1,20 +1,48 @@
 const axios = require("axios");
+const crypto = require("crypto"); // ➕ ADDED
 
-// STEP 1: Redirect to Canva (OAuth already done)
+// ➕ ADDED: PKCE helpers
+function generateCodeVerifier() {
+  return crypto.randomBytes(32).toString("base64url");
+}
+
+function generateCodeChallenge(verifier) {
+  return crypto
+    .createHash("sha256")
+    .update(verifier)
+    .digest("base64url");
+}
+
+// STEP 1: Redirect to Canva
 exports.redirectToCanva = (req, res) => {
+
+  // ➕ ADDED
+  const codeVerifier = generateCodeVerifier();
+  const codeChallenge = generateCodeChallenge(codeVerifier);
+
+  // ➕ ADDED: store verifier
+  req.session = req.session || {};
+  req.session.codeVerifier = codeVerifier;
+
+  // 🔁 UPDATED PARAMS
   const params = new URLSearchParams({
     response_type: "code",
     client_id: process.env.CANVA_CLIENT_ID,
     redirect_uri: process.env.CANVA_REDIRECT_URI,
     scope: "profile:read asset:read asset:write",
+    code_challenge: codeChallenge,            // ➕ ADDED
+    code_challenge_method: "S256",            // ➕ ADDED
   });
 
   const url = `https://www.canva.com/api/oauth/authorize?${params.toString()}`;
+
+  console.log("OAuth URL:", url); // ➕ ADDED (debug)
+
   res.redirect(url);
 };
 
-// STEP 2: Exchange code → access token
-async function getAccessToken(code) {
+// 🔁 UPDATED: now takes codeVerifier
+async function getAccessToken(code, codeVerifier) {
   const response = await axios.post(
     "https://api.canva.com/rest/v1/oauth/token",
     {
@@ -22,7 +50,7 @@ async function getAccessToken(code) {
       code: code,
       redirect_uri: process.env.CANVA_REDIRECT_URI,
       client_id: process.env.CANVA_CLIENT_ID,
-      client_secret: process.env.CANVA_CLIENT_SECRET,
+      code_verifier: codeVerifier, // ➕ IMPORTANT
     }
   );
 
@@ -38,15 +66,16 @@ exports.handleCallback = async (req, res) => {
   }
 
   try {
-    const tokenData = await getAccessToken(code);
+    // ➕ ADDED
+    const codeVerifier = req.session?.codeVerifier;
+
+    const tokenData = await getAccessToken(code, codeVerifier);
 
     const accessToken = tokenData.access_token;
 
-    // Store token temporarily (you can store in DB later)
-    req.session = req.session || {};
+    // Store token
     req.session.accessToken = accessToken;
 
-    // Redirect to frontend to open Canva editor
     res.redirect(`${process.env.FRONTEND_URL}/design`);
   } catch (err) {
     console.error(err.response?.data || err.message);
