@@ -44,14 +44,19 @@ exports.redirectToCanva = (req, res) => {
 // 🔁 UPDATED: now takes codeVerifier
 async function getAccessToken(code, codeVerifier) {
   const response = await axios.post(
-    "https://api.canva.com/rest/v1/oauth/token",
-    {
+    "https://api.canva.com/oauth/token",
+    new URLSearchParams({
       grant_type: "authorization_code",
       code: code,
       redirect_uri: process.env.CANVA_REDIRECT_URI,
       client_id: process.env.CANVA_CLIENT_ID,
       code_verifier: codeVerifier, // ➕ IMPORTANT
-    }
+    }),
+    {
+    headers: {
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+  }
   );
 
   return response.data;
