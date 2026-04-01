@@ -1,36 +1,36 @@
-# Canva Backend Integration (Node.js + Express)
+# Canva Shopify Backend Integration
 
 ## 📌 Overview
 
-This project is a backend service that integrates with Canva using OAuth. It allows users to:
+This project is a Node.js backend that integrates with Canva using OAuth 2.0.
+
+Users can:
 
 * Connect their Canva account
-* Authenticate via Canva
-* Handle OAuth callback
-* (Optional) Export designs
-
-This backend is deployed publicly so Canva reviewers can test the integration.
+* Authenticate securely
+* Return to the app after authorization
+* View design details (Design ID & Download URL)
 
 ---
 
 ## 🚀 Live Demo
 
-Base URL:
+🔗 Backend URL:
 
 ```
-https://your-backend.onrender.com
+https://canva-shopify-backend.onrender.com
 ```
 
-Connect Endpoint:
+🔗 Start OAuth Flow:
 
 ```
-https://your-backend.onrender.com/connect
+https://canva-shopify-backend.onrender.com/connect
 ```
 
-OAuth Callback:
+🔗 Frontend Test Page:
 
 ```
-https://your-backend.onrender.com/oauth/callback
+https://canva-shopify-backend.onrender.com/frontend/test.html
 ```
 
 ---
@@ -44,192 +44,112 @@ https://your-backend.onrender.com/oauth/callback
 
 ---
 
-## 📂 Project Structure
+## 📂 Final Project Structure
 
 ```
 project-root/
 │
-├── controllers/
-│   └── canvaController.js
+├── frontend/                     # Static frontend (test.html)
 │
-├── routes/
-│   └── canvaRoutes.js
+├── src/
+│   ├── config/                  # Config files
+│   ├── controllers/             # Canva OAuth logic
+│   ├── routes/                  # API routes
+│   ├── services/                # API/service logic
+│   └── app.js                   # Express app setup
 │
-├── .env
-├── server.js
-├── package.json
-└── README.md
+├── .gitignore                   # Ignore secrets & dependencies
+├── package.json                 # Dependencies
+├── package-lock.json
+├── server.js                    # Entry point
+└── README.md                    # Documentation
 ```
 
 ---
 
 ## ⚙️ Environment Variables
 
-Create a `.env` file in the root:
-
 ```
 CANVA_CLIENT_ID=your_client_id
 CANVA_CLIENT_SECRET=your_client_secret
-CANVA_REDIRECT_URI=https://your-backend.onrender.com/oauth/callback
-```
-
----
-
-## ▶️ Running Locally
-
-1. Install dependencies:
-
-```
-npm install
-```
-
-2. Start server:
-
-```
-node server.js
-```
-
-3. Open in browser:
-
-```
-http://localhost:5000/connect
-```
-
----
-
-## 🌐 Deployment (Render)
-
-### Step 1: Push code to GitHub
-
-```
-git init
-git add .
-git commit -m "initial commit"
-git branch -M main
-git remote add origin https://github.com/your-username/your-repo.git
-git push -u origin main
-```
-
-### Step 2: Deploy on Render
-
-1. Go to [https://render.com](https://render.com)
-2. Sign in with GitHub
-3. Click **New → Web Service**
-4. Select your repository
-
-### Step 3: Configure Service
-
-* Environment: Node
-* Build Command:
-
-```
-npm install
-```
-
-* Start Command:
-
-```
-node server.js
-```
-
-### Step 4: Add Environment Variables
-
-```
-CANVA_CLIENT_ID=your_client_id
-CANVA_CLIENT_SECRET=your_client_secret
-CANVA_REDIRECT_URI=https://your-backend.onrender.com/oauth/callback
-```
-
-### Step 5: Deploy
-
-After deployment, you will get:
-
-```
-https://your-backend.onrender.com
-```
-
----
-
-## 🔗 Canva App Configuration
-
-In Canva Developer Dashboard:
-
-Add Authorized Redirect URL:
-
-```
-https://your-backend.onrender.com/oauth/callback
+CANVA_AUTH_URL=https://www.canva.com/api/oauth/authorize
+CANVA_TOKEN_URL=https://api.canva.com/rest/v1/oauth/token
+CANVA_REDIRECT_URI=https://canva-shopify-backend.onrender.com/oauth/callback
+FRONTEND_URL=https://canva-shopify-backend.onrender.com/frontend/test.html
 ```
 
 ---
 
 ## 🔄 OAuth Flow
 
-1. User visits:
+1. User opens:
 
 ```
 /connect
 ```
 
 2. Redirected to Canva login
-
-3. After login, Canva redirects to:
+3. User (Allow access)
+4. Redirected back to:
 
 ```
 /oauth/callback
 ```
 
-4. Backend exchanges code for access token
+5. Backend processes request
+6. Redirect to frontend:
+
+```
+/frontend/test.html
+```
 
 ---
 
-## 🧪 Testing
+## 🧪 Testing URLs
 
-Open in browser:
+| Purpose      | URL                                                                                                                            |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------ |
+| Health Check | [https://canva-shopify-backend.onrender.com](https://canva-shopify-backend.onrender.com)                                       |
+| Start OAuth  | [https://canva-shopify-backend.onrender.com/connect](https://canva-shopify-backend.onrender.com/connect)                       |
+| Frontend     | [https://canva-shopify-backend.onrender.com/frontend/test.html](https://canva-shopify-backend.onrender.com/frontend/test.html) |
+
+---
+
+## 🌐 Deployment
+
+Backend is deployed on Render:
 
 ```
-https://your-backend.onrender.com/connect
+https://canva-shopify-backend.onrender.com
 ```
 
-Expected:
+---
 
-* Redirect to Canva login
-* Successful callback handling
+## 📩 Submission (for Canva)
+
+Provide this URL:
+
+```
+https://canva-shopify-backend.onrender.com/connect
+```
 
 ---
 
 ## ⚠️ Important Notes
 
-* Do NOT use localhost for submission
-* Do NOT use ngrok for Canva review
-* Always use deployed backend URL
-* Ensure redirect URI matches exactly in both places
-
----
-
-## 📩 Submission to Canva
-
-Provide this URL to reviewers:
-
-```
-https://your-backend.onrender.com/connect
-```
-
----
-
-## ✅ Status
-
-* OAuth flow implemented ✔️
-* Backend deployed ✔️
-* Ready for Canva review ✔️
+* No localhost URLs used
+* No ngrok URLs used
+* Environment variables secured
+* Fully deployed and publicly accessible
 
 ---
 
 ## 👨‍💻 Author
 
-Your Name
+Umer Badal
 
 ---
 
 ## 📄 License
 
-This project is for demonstration and integration purposes only.
+For demonstration and integration purposes only.
