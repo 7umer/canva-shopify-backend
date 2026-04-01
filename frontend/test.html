@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Canva Demo</title>
+</head>
+<body>
+
+<h1>Canva Integration Demo</h1>
+
+<button onclick="connect()">Design with Canva</button>
+
+<pre id="result"></pre>
+
+<script>
+function connect() {
+  window.location.href = "http://127.0.0.1:3001/connect";
+}
+
+const params = new URLSearchParams(window.location.search);
+const designId = params.get("designId");
+const downloadUrl = params.get("downloadUrl");
+
+if (designId) {
+  document.getElementById("result").textContent =
+    "Design ID: " + designId + "\nDownload URL: " + downloadUrl;
+}
+</script>
+
+</body>
+</html>
