@@ -1,6 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 const path = require("path");
+const session = require("express-session"); // ➕ ADD THIS
 
 const canvaRoutes = require("./routes/canvaRoutes");
 
@@ -10,13 +11,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+// ➕ ADD THIS (VERY IMPORTANT)
+app.use(
+  session({
+    secret: "canva_secret_key",
+    resave: false,
+    saveUninitialized: true,
+  })
+);
+
 // Serve frontend
 app.use("/frontend", express.static(path.join(__dirname, "../frontend")));
 
-// Canva routes (clean base path)
+// Canva routes
 app.use("/", canvaRoutes);
 
-// Health check (VERY useful for Render)
+// Health check
 app.get("/", (req, res) => {
   res.send("Backend is running 🚀");
 });
