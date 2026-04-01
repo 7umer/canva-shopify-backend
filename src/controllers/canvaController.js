@@ -53,10 +53,10 @@ async function getAccessToken(code, codeVerifier) {
       code_verifier: codeVerifier, // ➕ IMPORTANT
     }),
     {
-    headers: {
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-  }
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+      },
+    }
   );
 
   return response.data;

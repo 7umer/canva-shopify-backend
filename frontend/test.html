@@ -49,28 +49,35 @@ function extractDesignId(url) {
 async function downloadDesign() {
   const url = document.getElementById("designUrlInput").value;
 
-  if (!url) {
-    alert("Paste Canva design URL");
-    return;
-  }
-
-  const designId = extractDesignId(url);
+  const designId = url.match(/design\/([A-Za-z0-9_-]+)/)?.[1];
 
   if (!designId) {
     alert("Invalid Canva URL");
     return;
   }
 
-  const res = await fetch(
-    `https://canva-shopify-backend.onrender.com/export?designId=${designId}`
-  );
+  try {
+    const res = await fetch(
+      `https://canva-shopify-backend.onrender.com/export?designId=${designId}`
+    );
 
-  const data = await res.json();
+    const text = await res.text(); // ✅ FIXED
 
-  if (data.downloadUrl) {
-    window.location.href = data.downloadUrl;
-  } else {
-    alert("Download failed");
+    try {
+      const data = JSON.parse(text);
+
+      if (data.downloadUrl) {
+        window.location.href = data.downloadUrl;
+      } else {
+        alert("Export failed");
+      }
+    } catch {
+      alert(text); // shows "Export failed"
+    }
+
+  } catch (err) {
+    console.error(err);
+    alert("Something went wrong");
   }
 }
 </script>
